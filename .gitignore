@@ -3,4 +3,5 @@ backstop.json
 
 # Ignore all backstop_data contents except engine scripts
 backstop_data/*
-!backstop_data/engine_scripts/
+!backstop_data/engine_scripts/puppet/onBefore.js
+!backstop_data/engine_scripts/puppet/onReady.js
