@@ -1,4 +1,4 @@
-# Visual Regression Engine
+# Visual Regression Testing Tool
 
 A simple and powerful visual regression testing tool built with BackstopJS that compares websites visually to detect changes. Perfect for quick sanity checks and ensuring visual consistency across deployments.
 
@@ -26,12 +26,20 @@ chmod +x index.js
 
 ## Usage
 
+### Quick Start with npx
+
+Run directly without installation:
+
+```bash
+npx vrengine -r "https://example.com" -t "https://staging.example.com"
+```
+
 ### Basic Usage
 
 Compare a single test URL against a reference URL:
 
 ```bash
-npm start -- -r "https://example.com" -t "https://staging.example.com"
+npx vrengine -r "https://example.com" -t "https://staging.example.com"
 ```
 
 ### Multiple Test URLs
@@ -39,7 +47,7 @@ npm start -- -r "https://example.com" -t "https://staging.example.com"
 Compare multiple test URLs against a reference URL:
 
 ```bash
-npm start -- -r "https://example.com" -t "https://staging.example.com,https://dev.example.com"
+npx vrengine -r "https://example.com" -t "https://staging.example.com,https://dev.example.com"
 ```
 
 ### With Custom Cookies
@@ -47,7 +55,7 @@ npm start -- -r "https://example.com" -t "https://staging.example.com,https://de
 Pass custom cookies to handle authentication or consent:
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
   --cookies "session_token=abc123;user_preference=accepted"
@@ -58,7 +66,7 @@ npm start -- \
 Set localStorage values for consent management:
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
   --localStorage "consent_given=true;user_id=12345"
@@ -67,7 +75,7 @@ npm start -- \
 ### Complete Example with All Options
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
   --threshold 0.3 \
@@ -96,7 +104,7 @@ npm start -- \
 
 ```bash
 # Run visual regression test
-npm start -- -r <reference-url> -t <test-url>
+npx vrengine -r <reference-url> -t <test-url>
 
 # Take reference screenshots only
 npm run reference
@@ -125,17 +133,17 @@ The tool supports multiple authentication methods:
 
 #### HTTP Authentication
 ```bash
-npm start -- -r "https://example.com" -t "https://user:pass@staging.example.com"
+npx vrengine -r "https://example.com" -t "https://user:pass@staging.example.com"
 ```
 
 #### Cookie-based Authentication
 ```bash
-npm start -- --cookies "auth_token=abc123;session_id=xyz789"
+npx vrengine --cookies "auth_token=abc123;session_id=xyz789"
 ```
 
 #### LocalStorage-based Consent
 ```bash
-npm start -- --localStorage "consent_accepted=true;gdpr_consent=1"
+npx vrengine --localStorage "consent_accepted=true;gdpr_consent=1"
 ```
 
 ### Lazy Loading Handling
@@ -194,7 +202,7 @@ visual-regression/
 ### E-commerce with Authentication
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://shop.example.com" \
   -t "https://staging.shop.example.com" \
   --cookies "user_session=abc123;cart_id=xyz789" \
@@ -205,7 +213,7 @@ npm start -- \
 ### GDPR Compliance Testing
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
   --cookies "gdpr_consent=accepted;analytics_consent=true" \
@@ -215,7 +223,7 @@ npm start -- \
 ### Multi-page with Different Auth
 
 ```bash
-npm start -- \
+npx vrengine \
   -r "https://app.example.com/dashboard" \
   -t "https://staging.app.example.com/dashboard" \
   --cookies "jwt_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
@@ -230,7 +238,7 @@ The codebase is designed to be extensible:
 
 ```javascript
 // Future feature - already partially implemented
-npm start -- -r "https://example.com" -s "https://example.com/sitemap.xml"
+npx vrengine -r "https://example.com" -s "https://example.com/sitemap.xml"
 ```
 
 ### Mobile Testing
