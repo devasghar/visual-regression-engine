@@ -1,3 +1,6 @@
 node_modules
-backstop_data
 backstop.json
+
+# Ignore all backstop_data contents except engine scripts
+backstop_data/*
+!backstop_data/engine_scripts/
