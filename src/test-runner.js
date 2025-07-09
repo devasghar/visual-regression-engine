@@ -9,6 +9,8 @@ class TestRunner {
     this.threshold = options.threshold;
     this.label = options.label;
     this.delay = options.delay;
+    this.cookies = options.cookies;
+    this.localStorage = options.localStorage;
     this.debug = options.debug;
     this.configPath = path.join(__dirname, '..', 'backstop.json');
   }
@@ -48,7 +50,7 @@ class TestRunner {
     
     // Create scenarios for each test URL
     this.testUrls.forEach((testUrl, index) => {
-      scenarios.push({
+      const scenario = {
         label: `${this.label} - ${testUrl}`,
         url: testUrl,
         referenceUrl: this.referenceUrl,
@@ -56,6 +58,26 @@ class TestRunner {
         removeSelectors: [
           'img[src*=".gif"]', // Ignore .gif images to prevent false positives
           '.onetrust-consent-sdk', // Ignore OneTrust consent banners
+          '.ot-sdk-container',
+          '.optanon-alert-box-wrapper',
+          '.optanon-alert-box-bottom',
+          '.optanon-alert-box-top',
+          '.ot-fade-in',
+          '.ot-banner',
+          '.ot-pc-footer',
+          '.ot-pc-header',
+          '.ot-pc-content',
+          '.ot-close-icon',
+          '.ot-btn-container',
+          '.ot-floating-button',
+          '.ot-sdk-show-settings',
+          '.ot-pc-sdk',
+          '.ot-overlay',
+          '#onetrust-consent-sdk',
+          '#optanon-popup-wrapper',
+          '#optanon-popup-bg',
+          '#optanon-popup-bottom',
+          '#optanon',
           '[data-testid="loading"]',
           '.loading',
           '.spinner'
@@ -78,7 +100,17 @@ class TestRunner {
         expect: 0,
         misMatchThreshold: this.threshold,
         requireSameDimensions: false
-      });
+      };
+      
+      // Add custom cookies and localStorage if provided
+      if (this.cookies || this.localStorage) {
+        scenario.customOptions = {
+          cookies: this.cookies,
+          localStorage: this.localStorage
+        };
+      }
+      
+      scenarios.push(scenario);
     });
 
     return {

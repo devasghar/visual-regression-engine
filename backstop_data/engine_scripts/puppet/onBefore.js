@@ -1,6 +1,20 @@
 module.exports = async (page, scenario, vp) => {
   console.log('🔧 Setting up page environment...');
   
+  // Helper function to parse cookie/localStorage strings
+  const parseKeyValuePairs = (str) => {
+    if (!str) return {};
+    
+    const pairs = {};
+    str.split(';').forEach(pair => {
+      const [key, value] = pair.split('=').map(s => s.trim());
+      if (key && value) {
+        pairs[key] = value;
+      }
+    });
+    return pairs;
+  };
+  
   // Set viewport
   await page.setViewport({
     width: vp.width,
@@ -34,12 +48,25 @@ module.exports = async (page, scenario, vp) => {
     scenario.url = cleanUrl;
   }
   
+  // Store localStorage data in scenario for use in onReady
+  if (scenario.customOptions && scenario.customOptions.localStorage) {
+    console.log('💾 LocalStorage data will be set after page load...');
+    scenario.localStorageData = parseKeyValuePairs(scenario.customOptions.localStorage);
+  }
+  
   // Block certain resource types to speed up loading
   await page.setRequestInterception(true);
   
   page.on('request', (request) => {
     const resourceType = request.resourceType();
     const url = request.url();
+    
+    // Block OneTrust-related requests
+    if (url.includes('onetrust') || url.includes('cookielaw') || url.includes('optanon')) {
+      console.log('🚫 Blocking OneTrust request:', url);
+      request.abort();
+      return;
+    }
     
     // Block .gif images as requested
     if (url.includes('.gif')) {
@@ -56,17 +83,43 @@ module.exports = async (page, scenario, vp) => {
     }
   });
   
-  // Set cookies if needed (with try-catch to handle domain issues)
-  try {
-    const cookies = [
-      {
-        name: 'consent',
-        value: 'accepted',
-        domain: new URL(scenario.url).hostname
-      }
-    ];
+  // Set default consent cookies
+  const defaultCookies = [
+    {
+      name: 'consent',
+      value: 'accepted',
+      domain: urlObj.hostname
+    },
+    {
+      name: 'OptanonConsent',
+      value: 'accepted',
+      domain: urlObj.hostname
+    },
+    {
+      name: 'OptanonAlertBoxClosed',
+      value: new Date().toISOString(),
+      domain: urlObj.hostname
+    }
+  ];
+  
+  // Parse and add custom cookies if provided
+  if (scenario.customOptions && scenario.customOptions.cookies) {
+    console.log('🍪 Applying custom cookies...');
+    const customCookies = parseKeyValuePairs(scenario.customOptions.cookies);
     
-    await page.setCookie(...cookies);
+    Object.entries(customCookies).forEach(([name, value]) => {
+      defaultCookies.push({
+        name,
+        value,
+        domain: urlObj.hostname
+      });
+      console.log(`🍪 Added custom cookie: ${name}=${value}`);
+    });
+  }
+  
+  // Set all cookies
+  try {
+    await page.setCookie(...defaultCookies);
   } catch (error) {
     console.log('⚠️  Could not set cookies:', error.message);
   }
@@ -79,11 +132,39 @@ module.exports = async (page, scenario, vp) => {
       .notification,
       .toast,
       .onetrust-consent-sdk,
+      .ot-sdk-container,
+      .optanon-alert-box-wrapper,
+      .optanon-alert-box-bottom,
+      .optanon-alert-box-top,
+      .ot-fade-in,
+      .ot-banner,
+      .ot-pc-footer,
+      .ot-pc-header,
+      .ot-pc-content,
+      .ot-close-icon,
+      .ot-btn-container,
+      .ot-floating-button,
+      .ot-sdk-show-settings,
+      .ot-pc-sdk,
+      .ot-overlay,
+      #onetrust-consent-sdk,
+      #optanon-popup-wrapper,
+      #optanon-popup-bg,
+      #optanon-popup-bottom,
+      #optanon,
       [data-testid="loading"],
       .loading,
       .spinner,
       img[src*=".gif"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
       }
       
       /* Ensure animations are disabled */

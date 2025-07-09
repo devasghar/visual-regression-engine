@@ -4,6 +4,37 @@ module.exports = async (page, scenario, vp) => {
   // Wait for initial page load using a delay function
   await new Promise(resolve => setTimeout(resolve, 2000));
   
+  // Set custom localStorage if provided (now that we're on the target domain)
+  if (scenario.localStorageData) {
+    console.log('💾 Applying custom localStorage...');
+    
+    try {
+      await page.evaluate((data) => {
+        Object.entries(data).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+          console.log(`💾 Set localStorage: ${key}=${value}`);
+        });
+      }, scenario.localStorageData);
+      
+      console.log('✅ LocalStorage values set successfully');
+      
+      // Navigate again so the page can read localStorage values and bypass consent
+      console.log('🔄 Navigating again to apply localStorage values...');
+      await page.goto(scenario.url, { 
+        waitUntil: 'networkidle2',
+        timeout: 30000 
+      });
+      
+      console.log('✅ Page reloaded with localStorage values');
+      
+      // Wait a bit for the page to process localStorage and potentially redirect
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+    } catch (error) {
+      console.log('⚠️  Could not set localStorage or navigate:', error.message);
+    }
+  }
+  
   // Function to slowly scroll and handle lazy loading
   const handleLazyLoading = async () => {
     console.log('📜 Starting slow scroll to trigger lazy loading...');
@@ -79,10 +110,57 @@ module.exports = async (page, scenario, vp) => {
   // Final wait before screenshot
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Check for any remaining loading indicators
+  // Aggressively remove any OneTrust and loading elements
   await page.evaluate(() => {
-    const loadingElements = document.querySelectorAll('.loading, .spinner, [data-testid="loading"]');
-    loadingElements.forEach(el => el.remove());
+    // Remove all OneTrust consent elements
+    const oneTrustSelectors = [
+      '.onetrust-consent-sdk',
+      '.ot-sdk-container',
+      '.optanon-alert-box-wrapper',
+      '.optanon-alert-box-bottom',
+      '.optanon-alert-box-top',
+      '.ot-fade-in',
+      '.ot-banner',
+      '.ot-pc-footer',
+      '.ot-pc-header',
+      '.ot-pc-content',
+      '.ot-close-icon',
+      '.ot-btn-container',
+      '.ot-floating-button',
+      '.ot-sdk-show-settings',
+      '.ot-pc-sdk',
+      '.ot-overlay',
+      '#onetrust-consent-sdk',
+      '#optanon-popup-wrapper',
+      '#optanon-popup-bg',
+      '#optanon-popup-bottom',
+      '#optanon',
+      '.loading',
+      '.spinner',
+      '[data-testid="loading"]'
+    ];
+    
+    oneTrustSelectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(el => {
+        console.log('🗑️  Removing element:', selector);
+        el.remove();
+      });
+    });
+    
+    // Also remove any elements that might contain 'onetrust' or 'optanon' in their class or id
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+      const className = el.className || '';
+      const id = el.id || '';
+      if(typeof className === 'string' && typeof id === 'string') {
+        if (className.includes('onetrust') || className.includes('optanon') || 
+            id.includes('onetrust') || id.includes('optanon')) {
+          console.log('🗑️  Removing OneTrust element:', el.className || el.id);
+          el.remove();
+        }
+      }
+    });
   });
   
   console.log('✅ Page is ready for screenshot');

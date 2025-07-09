@@ -1,4 +1,4 @@
-# Visual Regression Testing Tool
+# Visual Regression Engine
 
 A simple and powerful visual regression testing tool built with BackstopJS that compares websites visually to detect changes. Perfect for quick sanity checks and ensuring visual consistency across deployments.
 
@@ -11,6 +11,8 @@ A simple and powerful visual regression testing tool built with BackstopJS that 
 - 🔄 **Lazy Loading Support**: Handles lazy-loaded content with intelligent scrolling
 - 🗺️ **Sitemap Ready**: Extensible architecture for future sitemap crawling
 - 📊 **Detailed Reports**: Visual HTML reports with side-by-side comparisons
+- 🍪 **Custom Cookies**: Pass custom cookies to handle authentication
+- 💾 **LocalStorage Support**: Set localStorage values for consent bypassing
 
 ## Installation
 
@@ -40,7 +42,29 @@ Compare multiple test URLs against a reference URL:
 npm start -- -r "https://example.com" -t "https://staging.example.com,https://dev.example.com"
 ```
 
-### Advanced Options
+### With Custom Cookies
+
+Pass custom cookies to handle authentication or consent:
+
+```bash
+npm start -- \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --cookies "session_token=abc123;user_preference=accepted"
+```
+
+### With Custom LocalStorage
+
+Set localStorage values for consent management:
+
+```bash
+npm start -- \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --localStorage "consent_given=true;user_id=12345"
+```
+
+### Complete Example with All Options
 
 ```bash
 npm start -- \
@@ -49,6 +73,8 @@ npm start -- \
   --threshold 0.3 \
   --label "Homepage Test" \
   --delay 5000 \
+  --cookies "session=abc123;consent=accepted" \
+  --localStorage "feature_flag=enabled;theme=dark" \
   --debug
 ```
 
@@ -62,6 +88,8 @@ npm start -- \
 | `--threshold <number>` | Similarity threshold (0-1) | 0.4 |
 | `--label <string>` | Test label/name | "Visual Regression Test" |
 | `--delay <number>` | Delay before screenshot (ms) | 3000 |
+| `--cookies <string>` | Custom cookies (name1=value1;name2=value2) | - |
+| `--localStorage <string>` | Custom localStorage (key1=value1;key2=value2) | - |
 | `--debug` | Enable debug mode | false |
 
 ## Available Scripts
@@ -86,9 +114,29 @@ npm run openReport
 ## How It Works
 
 1. **Setup**: Configures BackstopJS with your URLs and settings
-2. **Reference**: Takes screenshots of the reference URL
-3. **Test**: Takes screenshots of test URL(s) and compares them
-4. **Report**: Generates detailed HTML reports showing differences
+2. **Authentication**: Applies custom cookies and localStorage values
+3. **Reference**: Takes screenshots of the reference URL
+4. **Test**: Takes screenshots of test URL(s) and compares them
+5. **Report**: Generates detailed HTML reports showing differences
+
+### Custom Authentication
+
+The tool supports multiple authentication methods:
+
+#### HTTP Authentication
+```bash
+npm start -- -r "https://example.com" -t "https://user:pass@staging.example.com"
+```
+
+#### Cookie-based Authentication
+```bash
+npm start -- --cookies "auth_token=abc123;session_id=xyz789"
+```
+
+#### LocalStorage-based Consent
+```bash
+npm start -- --localStorage "consent_accepted=true;gdpr_consent=1"
+```
 
 ### Lazy Loading Handling
 
@@ -141,6 +189,39 @@ visual-regression/
 └── package.json
 ```
 
+## Real-World Examples
+
+### E-commerce with Authentication
+
+```bash
+npm start -- \
+  -r "https://shop.example.com" \
+  -t "https://staging.shop.example.com" \
+  --cookies "user_session=abc123;cart_id=xyz789" \
+  --localStorage "user_preferences=dark_mode;currency=USD" \
+  --threshold 0.3
+```
+
+### GDPR Compliance Testing
+
+```bash
+npm start -- \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --cookies "gdpr_consent=accepted;analytics_consent=true" \
+  --localStorage "consent_timestamp=2024-01-01T00:00:00Z"
+```
+
+### Multi-page with Different Auth
+
+```bash
+npm start -- \
+  -r "https://app.example.com/dashboard" \
+  -t "https://staging.app.example.com/dashboard" \
+  --cookies "jwt_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  --localStorage "feature_flags=newUI,betaFeatures"
+```
+
 ## Future Enhancements
 
 The codebase is designed to be extensible:
@@ -171,13 +252,24 @@ viewports: [
 1. **Network Timeout**: Increase `--delay` for slow-loading sites
 2. **Too Many Differences**: Adjust `--threshold` to be more lenient
 3. **Missing Content**: Check console for blocked resources or increase delay
+4. **Authentication Issues**: Verify cookie/localStorage format and values
 
 ### Debug Mode
 
 Use `--debug` flag to see:
 - Generated BackstopJS configuration
+- Cookie and localStorage values being set
 - Detailed error messages
 - Console logs from page interactions
+
+### Cookie/LocalStorage Format
+
+Both cookies and localStorage use the same format:
+```
+key1=value1;key2=value2;key3=value3
+```
+
+**Important**: Values containing semicolons or equals signs need to be URL-encoded.
 
 ### Viewing Reports
 
@@ -192,41 +284,6 @@ The report shows:
 - Highlighted differences
 - Similarity percentages
 - Option to approve changes
-
-## Examples
-
-### E-commerce Site Testing
-
-```bash
-# Test product pages
-npm start -- \
-  -r "https://shop.example.com/product/123" \
-  -t "https://staging.shop.example.com/product/123" \
-  --threshold 0.3 \
-  --label "Product Page"
-```
-
-### Multi-page Testing
-
-```bash
-# Test multiple pages at once
-npm start -- \
-  -r "https://example.com" \
-  -t "https://staging.example.com,https://staging.example.com/about,https://staging.example.com/contact" \
-  --threshold 0.4 \
-  --label "Multi-page Test"
-```
-
-### High-precision Testing
-
-```bash
-# Strict comparison for critical pages
-npm start -- \
-  -r "https://example.com/checkout" \
-  -t "https://staging.example.com/checkout" \
-  --threshold 0.1 \
-  --label "Checkout Critical Test"
-```
 
 ## Contributing
 

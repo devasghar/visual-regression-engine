@@ -13,6 +13,8 @@ program
   .option('--threshold <number>', 'Similarity threshold (0-1)', '0.4')
   .option('--label <string>', 'Test label/name', 'Visual Regression Test')
   .option('--delay <number>', 'Delay before screenshot (ms)', '3000')
+  .option('--cookies <string>', 'Custom cookies (name1=value1;name2=value2)')
+  .option('--localStorage <string>', 'Custom localStorage (key1=value1;key2=value2)')
   .option('--debug', 'Enable debug mode')
   .parse();
 
@@ -24,6 +26,14 @@ async function main() {
     console.log(`📋 Reference URL: ${options.reference}`);
     console.log(`🎯 Test URL(s): ${options.test}`);
     console.log(`📊 Threshold: ${options.threshold}`);
+    
+    if (options.cookies) {
+      console.log(`🍪 Custom cookies: ${options.cookies}`);
+    }
+    
+    if (options.localStorage) {
+      console.log(`💾 Custom localStorage: ${options.localStorage}`);
+    }
     
     // Parse test URLs
     const testUrls = UrlManager.parseUrls(options.test);
@@ -42,6 +52,8 @@ async function main() {
       threshold: parseFloat(options.threshold),
       label: options.label,
       delay: parseInt(options.delay),
+      cookies: options.cookies,
+      localStorage: options.localStorage,
       debug: options.debug
     });
     
