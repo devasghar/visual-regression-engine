@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "A simple and powerful visual regression testing tool built with BackstopJS that compares websites visually to detect changes. Perfect for quick sanity checks and ensuring visual consistency across deployments.",
   "main": "index.js",
+  "bin": {
+    "vrengine": "./index.js"
+  },
   "scripts": {
     "test": "backstop test",
     "reference": "backstop reference",
