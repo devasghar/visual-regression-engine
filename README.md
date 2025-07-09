@@ -1,4 +1,4 @@
-# Visual Regression Testing Tool
+# Visual Regression Engine
 
 A simple and powerful visual regression testing tool built with BackstopJS that compares websites visually to detect changes. Perfect for quick sanity checks and ensuring visual consistency across deployments.
 
