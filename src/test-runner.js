@@ -13,6 +13,11 @@ class TestRunner {
     this.localStorage = options.localStorage;
     this.debug = options.debug;
     this.configPath = path.join(__dirname, '..', 'backstop.json');
+    
+    // Get absolute paths for engine scripts
+    this.engineScriptsPath = path.join(__dirname, '..', 'backstop_data', 'engine_scripts');
+    this.onBeforeScript = path.join(this.engineScriptsPath, 'puppet', 'onBefore.js');
+    this.onReadyScript = path.join(this.engineScriptsPath, 'puppet', 'onReady.js');
   }
 
   async runTests() {
@@ -89,11 +94,11 @@ class TestRunner {
         ],
         misMatchThreshold: this.threshold,
         requireSameDimensions: false, // Allow position mismatches
-        onBeforeScript: 'puppet/onBefore.js',
-        onReadyScript: 'puppet/onReady.js',
+        onBeforeScript: this.onBeforeScript,
+        onReadyScript: this.onReadyScript,
         readyEvent: null,
         readySelector: null,
-        cookiePath: 'backstop_data/engine_scripts/cookies.json',
+        cookiePath: path.join(this.engineScriptsPath, 'cookies.json'),
         postInteractionWait: 0,
         selectors: ['document'],
         selectorExpansion: true,
@@ -122,15 +127,15 @@ class TestRunner {
           height: 1080
         }
       ],
-      onBeforeScript: 'puppet/onBefore.js',
-      onReadyScript: 'puppet/onReady.js',
+      onBeforeScript: this.onBeforeScript,
+      onReadyScript: this.onReadyScript,
       scenarios: scenarios,
       paths: {
-        bitmaps_reference: 'backstop_data/bitmaps_reference',
-        bitmaps_test: 'backstop_data/bitmaps_test',
-        engine_scripts: 'backstop_data/engine_scripts',
-        html_report: 'backstop_data/html_report',
-        ci_report: 'backstop_data/ci_report'
+        bitmaps_reference: path.join(__dirname, '..', 'backstop_data', 'bitmaps_reference'),
+        bitmaps_test: path.join(__dirname, '..', 'backstop_data', 'bitmaps_test'),
+        engine_scripts: this.engineScriptsPath,
+        html_report: path.join(__dirname, '..', 'backstop_data', 'html_report'),
+        ci_report: path.join(__dirname, '..', 'backstop_data', 'ci_report')
       },
       report: ['browser'],
       engine: 'puppeteer',
