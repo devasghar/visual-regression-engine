@@ -14,16 +14,6 @@ A simple and powerful visual regression testing tool built with BackstopJS that 
 - 🍪 **Custom Cookies**: Pass custom cookies to handle authentication
 - 💾 **LocalStorage Support**: Set localStorage values for consent bypassing
 
-## Installation
-
-```bash
-# Install dependencies
-npm install
-
-# Make the script executable (optional)
-chmod +x index.js
-```
-
 ## Usage
 
 ### Quick Start with npx
@@ -48,6 +38,61 @@ Compare multiple test URLs against a reference URL:
 
 ```bash
 npx vrengine -r "https://example.com" -t "https://staging.example.com,https://dev.example.com"
+```
+
+### With Sitemap Crawling
+
+Crawl a sitemap to automatically discover URLs for testing. The sitemap can be from either the reference or test domain:
+
+```bash
+npx vrengine \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml"
+```
+
+### With Reference Domain Sitemap
+
+Use a sitemap from the reference domain:
+
+```bash
+npx vrengine \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --sitemap "https://example.com/sitemap.xml"
+```
+
+### With URL Filtering
+
+Filter URLs from sitemaps using patterns:
+
+```bash
+npx vrengine \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml" \
+  --sitemap-filter "/admin,/api,/private"
+```
+
+### With Custom URL Mapping
+
+Map specific reference URLs to test URLs:
+
+```bash
+npx vrengine \
+  --url-mapping "https://example.com/home:https://staging.example.com/home,https://example.com/about:https://staging.example.com/about"
+```
+
+### With Sitemap Limits
+
+Limit the number of URLs crawled from sitemaps:
+
+```bash
+npx vrengine \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml" \
+  --sitemap-limit 20
 ```
 
 ### With Custom Cookies
@@ -78,8 +123,11 @@ npx vrengine \
 npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml" \
+  --sitemap-filter "/admin,/api" \
+  --sitemap-limit 30 \
   --threshold 0.3 \
-  --label "Homepage Test" \
+  --label "Full Site Test" \
   --delay 5000 \
   --cookies "session=abc123;consent=accepted" \
   --localStorage "feature_flag=enabled;theme=dark" \
@@ -92,7 +140,10 @@ npx vrengine \
 |--------|-------------|---------|
 | `-r, --reference <url>` | Reference URL (required) | - |
 | `-t, --test <urls>` | Test URL(s) - comma separated | - |
-| `-s, --sitemap <url>` | Sitemap URL (future feature) | - |
+| `-s, --sitemap <url>` | Sitemap URL for crawling URLs (from either reference or test domain) | - |
+| `--url-mapping <mapping>` | Custom URL mapping (ref1:test1,ref2:test2) | - |
+| `--sitemap-filter <patterns>` | Patterns to exclude from sitemap URLs | - |
+| `--sitemap-limit <number>` | Maximum URLs to crawl from sitemaps | 50 |
 | `--threshold <number>` | Similarity threshold (0-1) | 0.4 |
 | `--label <string>` | Test label/name | "Visual Regression Test" |
 | `--delay <number>` | Delay before screenshot (ms) | 3000 |
@@ -199,15 +250,37 @@ visual-regression/
 
 ## Real-World Examples
 
+### Full Site Testing with Sitemaps
+
+```bash
+npx vrengine \
+  -r "https://example.com" \
+  -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml" \
+  --sitemap-filter "/admin,/api,/private,/temp" \
+  --sitemap-limit 100 \
+  --threshold 0.3
+```
+
 ### E-commerce with Authentication
 
 ```bash
 npx vrengine \
   -r "https://shop.example.com" \
   -t "https://staging.shop.example.com" \
+  --sitemap "https://staging.shop.example.com/sitemap.xml" \
   --cookies "user_session=abc123;cart_id=xyz789" \
   --localStorage "user_preferences=dark_mode;currency=USD" \
   --threshold 0.3
+```
+
+### Blog Testing with Custom Mapping
+
+```bash
+npx vrengine \
+  --url-mapping "https://blog.example.com/home:https://staging.blog.example.com/home,https://blog.example.com/about:https://staging.blog.example.com/about,https://blog.example.com/contact:https://staging.blog.example.com/contact" \
+  --cookies "user_preference=accepted" \
+  --threshold 0.4
 ```
 
 ### GDPR Compliance Testing
@@ -216,6 +289,7 @@ npx vrengine \
 npx vrengine \
   -r "https://example.com" \
   -t "https://staging.example.com" \
+  --sitemap "https://staging.example.com/sitemap.xml" \
   --cookies "gdpr_consent=accepted;analytics_consent=true" \
   --localStorage "consent_timestamp=2024-01-01T00:00:00Z"
 ```
@@ -230,16 +304,50 @@ npx vrengine \
   --localStorage "feature_flags=newUI,betaFeatures"
 ```
 
+## Sitemap Crawling Features
+
+The tool now supports advanced sitemap crawling capabilities:
+
+### Smart Domain Detection
+- Automatically detects whether sitemap URLs are from reference or test domain
+- Creates corresponding URL pairs by replacing domains appropriately
+- Supports sitemaps from either reference or test domains
+- **Preserves HTTP authentication credentials** when creating URL pairs
+
+### Auto-Discovery
+- Automatically finds sitemaps at common locations (`/sitemap.xml`, `/sitemap_index.xml`, etc.)
+- Checks `robots.txt` for sitemap declarations
+- Supports WordPress sitemaps (`/wp-sitemap.xml`)
+
+### URL Filtering
+- Exclude URLs matching specific patterns (e.g., `/admin`, `/api`, `/private`)
+- Limit the number of URLs crawled to control test execution time
+- Remove duplicate URLs automatically
+
+### Multiple Sitemap Support
+- Handle sitemap index files that reference multiple sitemaps
+- Support for nested sitemap structures
+- Crawl sitemaps from any domain and create proper URL pairs
+
+### Custom URL Mapping
+- Map specific reference URLs to test URLs
+- Useful for testing different environments with different URL structures
+- Bypass automatic URL discovery for precise control
+
+### HTTP Authentication Support
+- Automatically preserves authentication credentials from test URLs
+- Supports both username:password@domain and cookie-based authentication
+- Works seamlessly with sitemap crawling
+
 ## Future Enhancements
 
 The codebase is designed to be extensible:
 
-### Sitemap Crawling
-
-```javascript
-// Future feature - already partially implemented
-npx vrengine -r "https://example.com" -s "https://example.com/sitemap.xml"
-```
+### Enhanced Sitemap Features
+- Auto-discovery of sitemaps from domain root
+- Support for RSS feeds as URL sources
+- Integration with Google Search Console API
+- Custom sitemap format support
 
 ### Mobile Testing
 

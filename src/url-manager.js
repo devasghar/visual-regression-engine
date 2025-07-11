@@ -56,7 +56,87 @@ class UrlManager {
   }
 
   /**
-   * Future enhancement: Crawl sitemap for URLs
+   * Auto-discover sitemap URLs from a domain
+   * @param {string} baseUrl - Base URL of the website
+   * @returns {Promise<Array<string>>} Array of potential sitemap URLs
+   */
+  static async discoverSitemaps(baseUrl) {
+    try {
+      const urlObj = new URL(baseUrl);
+      const baseUrlClean = `${urlObj.protocol}//${urlObj.hostname}`;
+      
+      const potentialSitemaps = [
+        `${baseUrlClean}/sitemap.xml`,
+        `${baseUrlClean}/sitemap_index.xml`,
+        `${baseUrlClean}/sitemaps.xml`,
+        `${baseUrlClean}/sitemap1.xml`,
+        `${baseUrlClean}/wp-sitemap.xml`, // WordPress
+        `${baseUrlClean}/sitemap-index.xml`
+      ];
+      
+      console.log('🔍 Auto-discovering sitemaps...');
+      const validSitemaps = [];
+      
+      for (const sitemapUrl of potentialSitemaps) {
+        const isValid = await this.validateUrl(sitemapUrl);
+        if (isValid) {
+          console.log(`✅ Found sitemap: ${sitemapUrl}`);
+          validSitemaps.push(sitemapUrl);
+        }
+      }
+      
+      // Also check robots.txt for sitemap declarations
+      try {
+        const robotsTxtUrl = `${baseUrlClean}/robots.txt`;
+        const robotsTxtContent = await this.fetchXmlData(robotsTxtUrl);
+        const sitemapMatches = robotsTxtContent.match(/Sitemap:\s*(https?:\/\/[^\s]+)/gi);
+        
+        if (sitemapMatches) {
+          for (const match of sitemapMatches) {
+            const sitemapUrl = match.replace(/^Sitemap:\s*/i, '').trim();
+            if (!validSitemaps.includes(sitemapUrl)) {
+              const isValid = await this.validateUrl(sitemapUrl);
+              if (isValid) {
+                console.log(`✅ Found sitemap in robots.txt: ${sitemapUrl}`);
+                validSitemaps.push(sitemapUrl);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        // robots.txt not found or not accessible, continue
+      }
+      
+      return validSitemaps;
+    } catch (error) {
+      console.error('❌ Error discovering sitemaps:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Crawl multiple sitemaps and combine results
+   * @param {Array<string>} sitemapUrls - Array of sitemap URLs
+   * @returns {Promise<Array<string>>} Combined array of URLs from all sitemaps
+   */
+  static async crawlMultipleSitemaps(sitemapUrls) {
+    const allUrls = [];
+    
+    for (const sitemapUrl of sitemapUrls) {
+      try {
+        const urls = await this.crawlSitemap(sitemapUrl);
+        allUrls.push(...urls);
+      } catch (error) {
+        console.error(`❌ Error crawling sitemap ${sitemapUrl}:`, error.message);
+      }
+    }
+    
+    // Remove duplicates
+    return [...new Set(allUrls)];
+  }
+
+  /**
+   * Enhanced sitemap crawling with better error handling and timeout
    * @param {string} sitemapUrl - URL to sitemap.xml
    * @returns {Promise<Array<string>>} Array of URLs from sitemap
    */
@@ -65,41 +145,51 @@ class UrlManager {
       console.log(`🗺️  Crawling sitemap: ${sitemapUrl}`);
       
       const xmlData = await this.fetchXmlData(sitemapUrl);
-      const parser = new xml2js.Parser();
+      const parser = new xml2js.Parser({ 
+        explicitArray: false,
+        ignoreAttrs: true,
+        trim: true
+      });
       const result = await parser.parseStringPromise(xmlData);
       
       const urls = [];
       
       // Handle regular sitemap
       if (result.urlset && result.urlset.url) {
-        result.urlset.url.forEach(urlEntry => {
-          if (urlEntry.loc && urlEntry.loc[0]) {
-            urls.push(urlEntry.loc[0]);
+        const urlEntries = Array.isArray(result.urlset.url) ? result.urlset.url : [result.urlset.url];
+        urlEntries.forEach(urlEntry => {
+          if (urlEntry.loc) {
+            urls.push(urlEntry.loc);
           }
         });
       }
       
       // Handle sitemap index
       if (result.sitemapindex && result.sitemapindex.sitemap) {
-        for (const sitemap of result.sitemapindex.sitemap) {
-          if (sitemap.loc && sitemap.loc[0]) {
-            const childUrls = await this.crawlSitemap(sitemap.loc[0]);
-            urls.push(...childUrls);
+        const sitemapEntries = Array.isArray(result.sitemapindex.sitemap) ? result.sitemapindex.sitemap : [result.sitemapindex.sitemap];
+        for (const sitemap of sitemapEntries) {
+          if (sitemap.loc) {
+            try {
+              const childUrls = await this.crawlSitemap(sitemap.loc);
+              urls.push(...childUrls);
+            } catch (error) {
+              console.error(`❌ Error crawling child sitemap ${sitemap.loc}:`, error.message);
+            }
           }
         }
       }
       
-      console.log(`📋 Found ${urls.length} URLs in sitemap`);
+      console.log(`📋 Found ${urls.length} URLs in sitemap: ${sitemapUrl}`);
       return urls;
       
     } catch (error) {
-      console.error('❌ Error crawling sitemap:', error.message);
+      console.error(`❌ Error crawling sitemap ${sitemapUrl}:`, error.message);
       return [];
     }
   }
 
   /**
-   * Fetch XML data from URL
+   * Fetch XML data from URL with timeout and better error handling
    * @param {string} url - URL to fetch
    * @returns {Promise<string>} XML data as string
    */
@@ -108,8 +198,23 @@ class UrlManager {
       const urlObj = new URL(url);
       const client = urlObj.protocol === 'https:' ? https : http;
       
-      const request = client.request(url, (response) => {
+      const request = client.request(url, {
+        timeout: 15000, // 15 second timeout
+        headers: {
+          'User-Agent': 'VREngine/1.0 (Visual Regression Engine)'
+        }
+      }, (response) => {
         let data = '';
+        
+        // Handle redirects
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+          return this.fetchXmlData(response.headers.location).then(resolve).catch(reject);
+        }
+        
+        if (response.statusCode < 200 || response.statusCode >= 400) {
+          reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
+          return;
+        }
         
         response.on('data', (chunk) => {
           data += chunk;
@@ -122,6 +227,11 @@ class UrlManager {
       
       request.on('error', (error) => {
         reject(error);
+      });
+      
+      request.on('timeout', () => {
+        request.destroy();
+        reject(new Error('Request timeout'));
       });
       
       request.end();

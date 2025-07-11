@@ -4,8 +4,7 @@ const path = require('path');
 
 class TestRunner {
   constructor(options) {
-    this.referenceUrl = options.referenceUrl;
-    this.testUrls = options.testUrls;
+    this.urlPairs = options.urlPairs || [];
     this.threshold = options.threshold;
     this.label = options.label;
     this.delay = options.delay;
@@ -53,12 +52,12 @@ class TestRunner {
   generateBackstopConfig() {
     const scenarios = [];
     
-    // Create scenarios for each test URL
-    this.testUrls.forEach((testUrl, index) => {
+    // Create scenarios for each URL pair
+    this.urlPairs.forEach((urlPair, index) => {
       const scenario = {
-        label: `${this.label} - ${testUrl}`,
-        url: testUrl,
-        referenceUrl: this.referenceUrl,
+        label: `${this.label} - ${urlPair.test} vs ${urlPair.reference}`,
+        url: urlPair.test,
+        referenceUrl: urlPair.reference,
         delay: this.delay,
         removeSelectors: [
           'img[src*=".gif"]', // Ignore .gif images to prevent false positives
