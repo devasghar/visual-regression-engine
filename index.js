@@ -30,20 +30,48 @@ async function main() {
     // Handle open report option
     if (options.openReport) {
       console.log('📖 Opening HTML report...');
-      const backstopProcess = spawn('npx', ['backstop', 'openReport'], { stdio: 'inherit' });
       
-      backstopProcess.on('close', (code) => {
-        if (code !== 0) {
-          console.error('❌ Failed to open report. Make sure you have run tests first.');
-          process.exit(1);
-        }
+      const path = require('path');
+      const fs = require('fs');
+      
+      // The report should be in the backstop_data directory where tests were run
+      const reportPath = path.join(process.cwd(), 'backstop_data', 'html_report', 'index.html');
+      
+      if (!fs.existsSync(reportPath)) {
+        console.error('❌ HTML report not found. Make sure you have run tests first.');
+        console.log(`💡 Expected report at: ${reportPath}`);
+        process.exit(1);
+      }
+      
+      console.log(`📂 Opening report from: ${reportPath}`);
+      
+      // Open the HTML file in the default browser
+      const platform = process.platform;
+      let openCommand;
+      
+      if (platform === 'darwin') {
+        openCommand = 'open';
+      } else if (platform === 'win32') {
+        openCommand = 'start';
+      } else {
+        openCommand = 'xdg-open';
+      }
+      
+      const openProcess = spawn(openCommand, [reportPath], { 
+        stdio: 'inherit',
+        detached: true 
       });
       
-      backstopProcess.on('error', (error) => {
+      openProcess.on('error', (error) => {
         console.error('❌ Error opening report:', error.message);
+        console.log('💡 Try opening the file manually:', reportPath);
         process.exit(1);
       });
       
+      // Don't wait for the process to finish since we want to detach it
+      openProcess.unref();
+      
+      console.log('✅ HTML report opened in your default browser');
       return;
     }
 
