@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
 const { program } = require('commander');
+const { spawn } = require('child_process');
 const TestRunner = require('./src/test-runner');
 const UrlManager = require('./src/url-manager');
 
 program
-  .version('1.0.0')
+  .version('1.0.8')
   .description('Visual Regression Testing Tool using BackstopJS')
-  .requiredOption('-r, --reference <url>', 'Reference URL')
-  .requiredOption('-t, --test <urls>', 'Test URL(s) - comma separated for multiple URLs')
+  .option('-r, --reference <url>', 'Reference URL')
+  .option('-t, --test <urls>', 'Test URL(s) - comma separated for multiple URLs')
   .option('-s, --sitemap <url>', 'Sitemap URL for crawling URLs (from either reference or test domain)')
   .option('--sitemap-filter <patterns>', 'Comma-separated patterns to exclude from sitemap URLs (e.g., /admin,/api)')
   .option('--sitemap-limit <number>', 'Maximum number of URLs to crawl from sitemap', '50')
@@ -18,6 +19,7 @@ program
   .option('--delay <number>', 'Delay before screenshot (ms)', '3000')
   .option('--cookies <string>', 'Custom cookies (name1=value1;name2=value2)')
   .option('--localStorage <string>', 'Custom localStorage (key1=value1;key2=value2)')
+  .option('--open-report', 'Open the HTML report in browser')
   .option('--debug', 'Enable debug mode')
   .parse();
 
@@ -25,6 +27,33 @@ const options = program.opts();
 
 async function main() {
   try {
+    // Handle open report option
+    if (options.openReport) {
+      console.log('📖 Opening HTML report...');
+      const backstopProcess = spawn('npx', ['backstop', 'openReport'], { stdio: 'inherit' });
+      
+      backstopProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error('❌ Failed to open report. Make sure you have run tests first.');
+          process.exit(1);
+        }
+      });
+      
+      backstopProcess.on('error', (error) => {
+        console.error('❌ Error opening report:', error.message);
+        process.exit(1);
+      });
+      
+      return;
+    }
+
+    // Validate required options for testing
+    if (!options.reference || !options.test) {
+      console.error('❌ Error: Both --reference and --test options are required for running tests.');
+      console.log('💡 Use --open-report to open the HTML report without running tests.');
+      process.exit(1);
+    }
+    
     console.log('🚀 Starting Visual Regression Testing...');
     console.log(`📋 Reference URL: ${options.reference}`);
     console.log(`🎯 Test URL(s): ${options.test}`);

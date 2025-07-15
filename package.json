@@ -1,6 +1,6 @@
 {
   "name": "vrengine",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A simple and powerful visual regression testing tool built with BackstopJS that compares websites visually to detect changes. Perfect for quick sanity checks and ensuring visual consistency across deployments.",
   "main": "index.js",
   "bin": {
@@ -11,6 +11,7 @@
     "reference": "backstop reference",
     "approve": "backstop approve",
     "openReport": "backstop openReport",
+    "report": "node index.js --open-report",
     "start": "node index.js"
   },
   "author": "dev.asghar@gmail.com",
