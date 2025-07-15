@@ -34,8 +34,8 @@ async function main() {
       const path = require('path');
       const fs = require('fs');
       
-      // The report should be in the backstop_data directory where tests were run
-      const reportPath = path.join(process.cwd(), 'backstop_data', 'html_report', 'index.html');
+      // The report should be in the vrengine module directory
+      const reportPath = path.join(__dirname, 'backstop_data', 'html_report', 'index.html');
       
       if (!fs.existsSync(reportPath)) {
         console.error('❌ HTML report not found. Make sure you have run tests first.');
