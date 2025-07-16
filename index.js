@@ -93,6 +93,8 @@ async function main() {
     
     if (options.localStorage) {
       console.log(`💾 Custom localStorage: ${options.localStorage}`);
+      console.log(`💾 localStorage length: ${options.localStorage.length}`);
+      console.log(`💾 localStorage JSON: ${JSON.stringify(options.localStorage)}`);
     }
     
     // Parse test URLs

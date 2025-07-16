@@ -6,12 +6,26 @@ module.exports = async (page, scenario, vp) => {
     if (!str) return {};
     
     const pairs = {};
-    str.split(';').forEach(pair => {
-      const [key, value] = pair.split('=').map(s => s.trim());
-      if (key && value) {
-        pairs[key] = value;
-      }
-    });
+    
+    // Handle localStorage with JSON values (e.g., "key:value" format)
+    if (str.includes(':')) {
+      // Find the first colon that separates key from value
+      const colonIndex = str.indexOf(':');
+      const key = str.substring(0, colonIndex).trim();
+      const value = str.substring(colonIndex + 1).trim();
+      
+      // If the value contains more colons (like in JSON), keep the entire value
+      pairs[key] = value;
+    } else {
+      // Handle cookie format (e.g., "key1=value1;key2=value2" format)
+      str.split(';').forEach(pair => {
+        const [key, value] = pair.split('=').map(s => s.trim());
+        if (key && value) {
+          pairs[key] = value;
+        }
+      });
+    }
+    
     return pairs;
   };
   
@@ -51,7 +65,9 @@ module.exports = async (page, scenario, vp) => {
   // Store localStorage data in scenario for use in onReady
   if (scenario.customOptions && scenario.customOptions.localStorage) {
     console.log('💾 LocalStorage data will be set after page load...');
+    console.log('💾 Raw localStorage string:', scenario.customOptions.localStorage);
     scenario.localStorageData = parseKeyValuePairs(scenario.customOptions.localStorage);
+    console.log('💾 Parsed localStorage data:', scenario.localStorageData);
   }
   
   // Block certain resource types to speed up loading

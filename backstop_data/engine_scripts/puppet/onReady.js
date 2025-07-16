@@ -7,6 +7,7 @@ module.exports = async (page, scenario, vp) => {
   // Set custom localStorage if provided (now that we're on the target domain)
   if (scenario.localStorageData) {
     console.log('💾 Applying custom localStorage...');
+    console.log('💾 localStorage data to apply:', scenario.localStorageData);
     
     try {
       await page.evaluate((data) => {
@@ -14,6 +15,13 @@ module.exports = async (page, scenario, vp) => {
           localStorage.setItem(key, value);
           console.log(`💾 Set localStorage: ${key}=${value}`);
         });
+        
+        // Log all localStorage items for debugging
+        console.log('💾 All localStorage items after setting:');
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          console.log(`💾 ${key}: ${localStorage.getItem(key)}`);
+        }
       }, scenario.localStorageData);
       
       console.log('✅ LocalStorage values set successfully');
